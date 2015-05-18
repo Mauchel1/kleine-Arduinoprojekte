@@ -5,12 +5,12 @@ Die Anzeige erfolgt mit einer 3fachen 7 Segment Anzeige
 */
 
     #define SEGMENT1_PIN 8 // Ground von Segment 1
-    #define SEGMENT2_PIN 9 // Ground von Segment 2
-    #define SEGMENT3_PIN 10 // Ground von Segment 3
-    #define CLOCK_PIN 7 // toggeln während der Datenübertragung
-    #define LATCH_PIN 6 // vor dem Senden der Daten an den IC auf LOW ziehen, danach wieder HIGH
-    #define DATA_PIN 5  // an den seriellen Eingang des IC; jeweils 1 Byte übertragen
-    #define LIGHT_PIN 4
+    #define SEGMENT2_PIN 7 // Ground von Segment 2
+    #define SEGMENT3_PIN 6 // Ground von Segment 3
+    #define CLOCK_PIN 5 // toggeln während der Datenübertragung
+    #define LATCH_PIN 4 // vor dem Senden der Daten an den IC auf LOW ziehen, danach wieder HIGH
+    #define DATA_PIN 3  // an den seriellen Eingang des IC; jeweils 1 Byte übertragen
+    #define LIGHT_PIN A2 // Input vom Lichtsensor
    
     uint8_t zahlen[10] = {0x3f,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F};
 
@@ -32,9 +32,7 @@ void setup() {
     pinMode(SEGMENT2_PIN, OUTPUT);
     pinMode(SEGMENT3_PIN, OUTPUT);
     pinMode(LIGHT_PIN, INPUT);  
-
 }
-
 
 void write_to_segments(){
     einer = zahl % 10;

@@ -1,10 +1,13 @@
-# kleine-Arduinoprojekte
+﻿# kleine-Arduinoprojekte
 Hier drin sind verschiedene kleine Projekte mit Arduino
 
 
 ***PERSONENZÄHLER-HALLOWEEN***
-Pin Belegung der 7-Segment-Anzeige-Modul:
 
+Pin Belegung des 7-Segment-Anzeige-Modul:
+
+ - Vcc (5V)
+ - GND
  - GND
  - GNDSegment3
  - GNDSegment2
@@ -12,4 +15,4 @@ Pin Belegung der 7-Segment-Anzeige-Modul:
  - Clock
  - Latch
  - Data
- - Vcc
+ - Vcc (5V)
