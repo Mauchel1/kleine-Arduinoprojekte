@@ -1,42 +1,40 @@
 /******************************************
 Spinnensteuerung
-
 Dieses Skript soll die Spinne an Halloween hoch und runter bewegen.
 Am besten sogar mit kleinen Unterbrechungen.
   modified 24 October 2015
   by Daniel Friedrich
 *******************************************/
+//#define MOTORAUS //Wenn definiert ist der Motor aus beim runterfahren - Achtung Werte neu anpassen!
+#define RUNTERZEIT 1000 // Zeit, die der Motor runter aus ist
 
-#define MAX_SPEED 2 // je kleiner Desto Schneller Maximal
-#define MIN_SPEED 50 // je höher Desto Langsamer beim Anfahren und Bremsen
+int MAX_SPEED = 1; // je kleiner Desto Schneller Maximal
+#define MIN_SPEED 100 // je höher Desto Langsamer beim Anfahren und Bremsen
 #define Bremszyklen 40
+
 #define RICHTUNG1PIN 9
 #define ENABLE 4
 #define GESCHWPIN 7
 #define MOTOR1PIN 8
-#define STOPPOSITION 1500
-#define HOCHFAHRT 600
-//#define SERIELL  // für seriellen mode
-#define POSITIONENANZAHL 2
 
+#define LONGWAIT 60000 // in der Zeit kühlt der Motor ab
+#define HOCHRUNTEROFFSET 00    //in Schritten
+#define FAHRT 1000
+#define OBENWARTEN 10000
+#define UNTENWARTEN 5000
+//#define SERIELL  // für seriellen mode
+
+int Anzahl = 0;
 unsigned long time;
 unsigned long last_move;
 unsigned int Wartezeit = 3000;
 int i = 0; //Schrittzähler
-boolean Richtung = 1; //1 for CCW
+boolean Richtung = 0; //1 for CCW
 boolean Geschwindigkeit = 1; // 1 for HALF
 int Ziel = 0;
 int Bewegung = 0;
 int Status = 0;
 int Position = 0;
-int Wartezeiten[POSITIONENANZAHL] = {3000, 5000};
-int Positionen[POSITIONENANZAHL] = {HOCHFAHRT, 1};
-int Positionstatus = 0;
-
-void Setup() {
-  //Grundpositionen finden
-  Status = 2;
-}
 
 void setup() {
   pinMode(ENABLE, OUTPUT);
@@ -46,18 +44,14 @@ void setup() {
   Serial.begin(38400);
   digitalWrite(ENABLE, 1);
   digitalWrite(GESCHWPIN, 1);
+  digitalWrite(RICHTUNG1PIN, 1);
 }
 
 unsigned long Drehungschritt() {
   digitalWrite(MOTOR1PIN, 0);
-  delay(1);
+  delayMicroseconds(300);
   digitalWrite(MOTOR1PIN, 1);
-  if (Richtung){
   Position++;
-  }
-  else
-  Position--;
-  //(Richtung) ? Position++ : Position--;
   return (millis());
 }
 
@@ -103,75 +97,58 @@ void Move_Drehung() {
   }
 }
 
-void Pause_Drehung() {
-  Wartezeit = 5000;
-  if ((time - last_move) > Wartezeit) {
-    last_move = Drehungschritt();
-    Richtung = !Richtung;
-    digitalWrite(RICHTUNG1PIN, Richtung);
-  }
-}
-
 void Einlesen() {
 #ifdef SERIELL
   Ziel = Serial.parseInt();
 #else
-  Ziel = Vorgabe();
+  Ziel = FAHRT;
+#endif
+
+#ifdef MOTORAUS
+  delay(OBENWARTEN);
+  digitalWrite(ENABLE, 0);
+  delay(RUNTERZEIT);
+  digitalWrite(ENABLE, 1);
+  delay(UNTENWARTEN);
+
+#else
+  if (Richtung) { 
+    delay(OBENWARTEN);
+    digitalWrite(RICHTUNG1PIN, 0);
+    digitalWrite(GESCHWPIN, 0);    
+    Richtung = 0;
+  }
+  else {
+    delay(UNTENWARTEN);
+    digitalWrite(RICHTUNG1PIN, 1);
+    digitalWrite(GESCHWPIN, 1);
+    Ziel = Ziel * 2 + HOCHRUNTEROFFSET;
+    Richtung = 1;
+    Anzahl++;
+    if (Anzahl % 5 == 0) {
+      digitalWrite(ENABLE, 0);
+      delay(LONGWAIT);
+      digitalWrite(ENABLE, 1);
+    }
+  }
+  
 #endif
   if (Ziel) {
     Bewegung = Ziel - Position;
-    if (Bewegung != 0 && Bewegung != 1 && Bewegung != -1) {
-      Status = 1;
-      Wartezeit = MIN_SPEED;
-      if (Bewegung < 0) {
-        Bewegung = Bewegung * (-1);
-        Richtung = 0;
-        digitalWrite(RICHTUNG1PIN, Richtung);
-      }
-      else {
-        Richtung = 1;
-        digitalWrite(RICHTUNG1PIN, Richtung);
-      }
-    }
+    Status = 1;
+    Wartezeit = MIN_SPEED;
   }
-}
-
-int Vorgabe() {
-  if (Positionstatus >= POSITIONENANZAHL ) { //aus dem array gelaufen
-    Positionstatus = 0;
-  }
-  Positionstatus++;
-  delay(Wartezeiten[Positionstatus - 1]); 
-  //Wartezeit = Wartezeiten[Positionstatus - 1]; //geht irgendwie nicht... kp warum
-  return (Positionen[Positionstatus - 1]);
 }
 
 void loop() {
   while (1) {
     time = millis();
-    //    delay(20);
-    Serial.println(Position);
+    //Serial.println(Position);
+    Serial.println(Anzahl);
     if (Status != 1) {
+      Position = 0;
       Einlesen();
     }
-
-    switch (Status) {
-      case 0: {
-          Setup();
-          break;
-        }
-      case 1: {
-          Move_Drehung();
-          break;
-        }
-      case 2: {
-          Pause_Drehung();
-          break;
-        }
-      default: {
-          //          Pause();
-        }
-    }
+    Move_Drehung();
   }
 }
-
